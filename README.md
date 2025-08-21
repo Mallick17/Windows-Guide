@@ -271,3 +271,36 @@ Register-ScheduledTask -TaskName "S3DailySync" -Action $Action -Trigger $Trigger
 
 ---
 
+### Go to task scheduler GUI
+<img width="1201" height="477" alt="image" src="https://github.com/user-attachments/assets/e6fcac6c-3b45-4120-a6cc-4bca65b0b396" />
+
+- then Go to Task Scheduler Library
+- Find S3DailySync and CLick on it
+- In the left hand side you will find `Run` , `End` , `Disable` and other options.
+- Added some files in the source local folder in the system
+- Then clicked on Run
+- Followed Step 4 from the above task
+* Check task info:
+
+  ```powershell
+  Get-ScheduledTaskInfo -TaskName "S3DailySync"
+  ```
+* Check logs:
+
+  ```powershell
+  Get-Content (Get-ChildItem "C:\Logs\s3sync_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1)
+  ```
+- New task has run and the output of the above command looks like
+```powershell
+PS C:\Users\Mallick\.aws> Get-ScheduledTaskInfo -TaskName "S3DailySync"
+LastRunTime        : 21-08-2025 16:24:15
+LastTaskResult     : 0
+NextRunTime        : 22-08-2025 16:13:00
+NumberOfMissedRuns : 0
+TaskName           : S3DailySync
+TaskPath           :
+PSComputerName     :
+```
+
+- In the S3 bucket folder
+<img width="1200" height="572" alt="image" src="https://github.com/user-attachments/assets/bc990648-c88a-4be0-8b53-481466bd6c9c" />
