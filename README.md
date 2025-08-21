@@ -273,8 +273,6 @@ Register-ScheduledTask -TaskName "S3DailySync" -Action $Action -Trigger $Trigger
 ---
 
 ### Go to task scheduler GUI
-<img width="1201" height="477" alt="image" src="https://github.com/user-attachments/assets/e6fcac6c-3b45-4120-a6cc-4bca65b0b396" />
-
 - then Go to Task Scheduler Library
 - Find S3DailySync and CLick on it
 - In the left hand side you will find `Run` , `End` , `Disable` and other options.
