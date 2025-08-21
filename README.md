@@ -1,5 +1,6 @@
 # Windows-Guide
-## Windows Cron Jobs using Task Scheduler
+## Install AWS CLI in Windows
+Find it in AWS documentation.
 
 ### Configuring AWS in Windows
 
@@ -168,7 +169,7 @@ That’s it — now `aws` will behave as if `my-sync-profile` is the default eve
 
 ---
 
-
+## Windows Cron Jobs using Task Scheduler
 
 ### **Step 1: Create the AWS profile**
 
