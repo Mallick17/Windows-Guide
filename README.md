@@ -165,3 +165,101 @@ output=json
 That’s it — now `aws` will behave as if `my-sync-profile` is the default everywhere.
 
 </details>
+
+---
+
+### **Step 1: Create the AWS profile**
+
+Run this in PowerShell (replace with your real values):
+
+```powershell
+aws configure --profile mfa-session
+```
+
+It will ask:
+
+```
+AWS Access Key ID [None]: ASIAxxxx
+AWS Secret Access Key [None]: xxxxx
+Default region name [None]: ap-south-1
+Default output format [None]: json
+```
+
+👉 After this, open the file
+`C:\Users\<YourUser>\.aws\credentials`
+and **add the session token** manually under `[mfa-session]`:
+
+```ini
+[mfa-session]
+aws_access_key_id = ASIAxxxx
+aws_secret_access_key = xxxxx
+aws_session_token = IQoJb3JpZ2luX2Vj....
+```
+
+That’s it. ✅
+
+---
+
+### **Step 2: Create the PowerShell script**
+
+Save this as `C:\scripts\s3sync.ps1`:
+
+```powershell
+# Ensure log directory exists
+$LogDir = "C:\Logs"
+if (!(Test-Path $LogDir)) {
+    New-Item -ItemType Directory -Path $LogDir | Out-Null
+}
+
+# Date format: YYYYMMDD_HHmmss
+$DateTime = (Get-Date).ToString("yyyyMMdd_HHmmss")
+$LogFile  = Join-Path $LogDir "s3sync_$DateTime.log"
+
+# Write header
+"Starting sync at $DateTime" | Out-File -FilePath $LogFile -Encoding utf8
+
+# Run sync with profile and log output
+aws s3 sync "C:\Data\Reports" "s3://my-company-backups/reports/" --profile mfa-session *>> $LogFile
+
+# Write footer
+"Finished sync at $DateTime" | Out-File -FilePath $LogFile -Append -Encoding utf8
+```
+
+---
+
+### **Step 3: Schedule the Task**
+
+Run this in PowerShell **as Administrator**:
+
+```powershell
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"`"C:\scripts\s3sync.ps1`"`""
+$Trigger = New-ScheduledTaskTrigger -Daily -At 05:32
+$Principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
+Register-ScheduledTask -TaskName "S3DailySync" -Action $Action -Trigger $Trigger -Principal $Principal -Description "Daily sync C:\Data\Reports to S3"
+```
+
+---
+
+### **Step 4: Verify**
+
+* Check task info:
+
+  ```powershell
+  Get-ScheduledTaskInfo -TaskName "S3DailySync"
+  ```
+* Check logs:
+
+  ```powershell
+  Get-Content (Get-ChildItem "C:\Logs\s3sync_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1)
+  ```
+
+---
+
+✅ That’s the **simplest setup**:
+
+* Profile is stored once (`mfa-session`).
+* Script always runs with `--profile mfa-session`.
+* No environment variables, no exporting.
+
+---
+
