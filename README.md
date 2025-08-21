@@ -259,6 +259,10 @@ Register-ScheduledTask -TaskName "S3DailySync" -Action $Action -Trigger $Trigger
 
 ---
 
+#### After Executing the steps
+<img width="1186" height="483" alt="image" src="https://github.com/user-attachments/assets/ce08d0fe-f4cc-454b-858a-63fea8f4ed3e" />
+
+
 ✅ That’s the **simplest setup**:
 
 * Profile is stored once (`mfa-session`).
