@@ -168,6 +168,8 @@ That’s it — now `aws` will behave as if `my-sync-profile` is the default eve
 
 ---
 
+
+
 ### **Step 1: Create the AWS profile**
 
 Run this in PowerShell (replace with your real values):
@@ -187,7 +189,7 @@ Default output format [None]: json
 
 👉 After this, open the file
 `C:\Users\<YourUser>\.aws\credentials`
-and **add the session token** manually under `[mfa-session]`:
+and **add the session token** manually under `[mfa-session]`: as well as add the aws access key and secret access key after the mfa command is given in the cli
 
 ```ini
 [mfa-session]
@@ -226,6 +228,8 @@ aws s3 sync "C:\Data\Reports" "s3://my-company-backups/reports/" --profile mfa-s
 ```
 
 ---
+#### Before Executing the steps task
+<img width="1200" height="490" alt="image" src="https://github.com/user-attachments/assets/2ee18984-e253-4944-b6e4-ce3fe6769bf8" />
 
 ### **Step 3: Schedule the Task**
 
