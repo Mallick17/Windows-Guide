@@ -478,7 +478,8 @@ $RepetitionDuration = New-TimeSpan -Days 3 ## --> We can change at the later sta
 - Triggers Tab
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/0e59e79e-e0dc-41e8-b72f-e302a03a32fc" />
 
-
+- Actions Tab
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/eefd33d6-cfa6-4cc7-92a6-a319f1f02073" />
   
 </details>
 
