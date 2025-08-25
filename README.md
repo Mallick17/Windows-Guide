@@ -308,3 +308,116 @@ PSComputerName     :
 <img width="1200" height="572" alt="image" src="https://github.com/user-attachments/assets/bc990648-c88a-4be0-8b53-481466bd6c9c" />
 
 </details>
+
+---
+
+## Using Task Scheduler to Backup every minute to S3 Bucket
+- Tested Every Minute with Multiple Folders
+- Tested with Restarting the system multiple times.
+- Tested with shuting down the system multiple times.
+
+<details>
+  <summary>Click to view the configuration</summary>
+
+### **Step 1: Create the AWS profile**
+
+Run this in PowerShell (replace with your real values):
+
+```powershell
+aws configure --profile mfa-session
+```
+
+It will ask:
+
+```
+AWS Access Key ID [None]: ASIAxxxx
+AWS Secret Access Key [None]: xxxxx
+Default region name [None]: ap-south-1
+Default output format [None]: json
+```
+
+👉 After this, open the file
+`C:\Users\<YourUser>\.aws\credentials`
+and **add the session token** manually under `[mfa-session]`: as well as add the aws access key and secret access key after the mfa command is given in the cli
+
+```ini
+[default]
+aws_access_key_id = ASIAxxxx
+aws_secret_access_key = xxxxx
+
+[mfa-session]
+aws_access_key_id = ASIAxxxx ## --> Generated from MFA Session for CLI
+aws_secret_access_key = xxxxx ## --> Generated from MFA Session for CLI
+aws_session_token = IQoJb3JpZ2luX2Vj.... ## --> Generated from MFA Session for CLI
+```
+
+That’s it. ✅
+
+### **Step 2: Create the PowerShell script**
+- Save this as `C:\scripts\s3sync.ps1`:
+
+```powershell
+# Ensure log directory exists
+$LogDir = "C:\Logs"
+if (!(Test-Path $LogDir)) {
+    New-Item -ItemType Directory -Path $LogDir | Out-Null
+}
+
+# Define persistent log file
+$LogFile = Join-Path $LogDir "s3sync.log"
+
+# Add header with timestamp
+$DateTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+Add-Content $LogFile "==== Sync started at $DateTime ===="
+
+# Run sync and append output to the log file (single-line command)
+aws s3 sync "C:\Users\Testing\scripts\Data\Reports" "s3://elasticbeanstalk-ap-south-1-508351649560/sync-commands-test/" --profile mfa-session 2>&1 | Add-Content $LogFile
+
+# Add footer with timestamp
+$EndTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+Add-Content $LogFile "==== Sync finished at $EndTime ===="
+Add-Content $LogFile ""
+```
+
+### **Step 3: Schedule the Task**
+Run this in PowerShell **as Administrator**:
+- Repetation Duration 3 Days
+```powershell
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File "C:\Users\Testing\scripts\s3sync.ps1""
+$Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(1) ``
+    -RepetitionInterval (New-TimeSpan -Minutes 1) ``
+    -RepetitionDuration (New-TimeSpan -Days 3)
+$Principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
+Register-ScheduledTask -TaskName "S3EveryMinuteSync" -Action $Action -Trigger $Trigger -Principal $Principal -Description "Sync C:\Data\Reports to S3 every minute"
+```
+
+- Repetation Duration Max
+```powershell
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File "C:\Users\Testing\scripts\s3sync.ps1""
+$Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(1) ``
+    -RepetitionInterval (New-TimeSpan -Minutes 1) ``
+    -RepetitionDuration ([TimeSpan]::MaxValue)
+$Principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
+Register-ScheduledTask -TaskName "S3EveryMinuteSync" -Action $Action -Trigger $Trigger -Principal $Principal -Description "Sync C:\Data\Reports to S3 every minute"
+$RepetitionDuration = New-TimeSpan -Days 3 ## --> We can change at the later stage anytime.
+```
+
+### **Step 4: Verify**
+
+* Check task info:
+
+  ```powershell
+  Get-ScheduledTaskInfo -TaskName "S3DailySync"
+  Get-ScheduledTask | Get-ScheduledTaskInfo | Select-Object TaskName, State, LastRunTime, NextRunTime
+  Get-ScheduledTask -TaskName "S3EveryMinuteSync" | Get-ScheduledTaskInfo | Select-Object TaskName, State, LastRunTime, NextRunTime
+  Get-ScheduledTask -TaskName "S3EveryMinuteSync" | Get-ScheduledTaskInfo | Select-Object TaskName, LastRunTime, LastTaskResult
+  ```
+* Check logs:
+
+  ```powershell
+  Get-Content (Get-ChildItem "C:\Logs\s3sync.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1)
+  ```
+
+---
+  
+</details>
