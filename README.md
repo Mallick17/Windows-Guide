@@ -169,7 +169,10 @@ That’s it — now `aws` will behave as if `my-sync-profile` is the default eve
 
 ---
 
-## Windows Cron Jobs using Task Scheduler
+## Windows Cron Jobs using Task Scheduler to backup In Daily basis to S3 Bucket
+
+<details>
+  <summary>Using Task Scheduler to Backup In Daily basis to S3 Bucket, Click to view the steps</summary>
 
 ### **Step 1: Create the AWS profile**
 
@@ -303,3 +306,5 @@ PSComputerName     :
 
 - In the S3 bucket folder
 <img width="1200" height="572" alt="image" src="https://github.com/user-attachments/assets/bc990648-c88a-4be0-8b53-481466bd6c9c" />
+
+</details>
