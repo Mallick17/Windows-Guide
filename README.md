@@ -419,5 +419,64 @@ $RepetitionDuration = New-TimeSpan -Days 3 ## --> We can change at the later sta
   ```
 
 ---
+
+### **Steps to Modify a Scheduled Task in Task Scheduler GUI**
+
+1. **Open Task Scheduler**
+
+   * Press **`Win + R`**
+   * Type `taskschd.msc` and press **Enter**
+   * This opens the **Task Scheduler** console.
+
+2. **Locate Your Task**
+
+   * In the **left pane**, expand:
+
+     * **Task Scheduler Library**
+     * Navigate through the scheduled tasks and find your tasks.
+
+3. **Open Task Properties**
+
+   * Right-click the task → Select **Properties** or After clicking your task in Task Scheduler Library, Check the Right Side Panel Under → Selected Item  → Select **Properties**
+   * You’ll see multiple tabs for different settings.
+
+4. **Modify Configuration as Needed**
+
+   * **General Tab**
+
+     * Change the task **name**, **description**, or **security options** (e.g., run only when user is logged on, highest privileges).
+   * **Triggers Tab**
+
+     * Click **Edit** to modify an existing trigger (like time, startup, logon, etc.)
+     * Or click **New** to add another trigger.
+   * **Actions Tab**
+
+     * Edit the action (script or program to run).
+     * Or add/remove actions as needed.
+   * **Conditions Tab**
+
+     * Configure conditions such as *“Start only if on AC power”* or *“Wake computer to run task.”*
+   * **Settings Tab**
+
+     * Adjust advanced settings like allowing the task to be run on demand, retry attempts, or stopping the task if it runs too long.
+
+5. **Apply Changes**
+
+   * Once you’ve made changes, click **OK**.
+   * If prompted for credentials (when running under a different account), enter them.
+
+6. **Test Your Task**
+
+   * Right-click the task → Select **Run** to make sure it executes with the new configuration.
+  
+<details>
+  <summary>Click to view the Images which was configured</summary>
+
+
+  
+</details>
+
+---
+
   
 </details>
