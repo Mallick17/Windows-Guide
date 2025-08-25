@@ -472,6 +472,10 @@ $RepetitionDuration = New-TimeSpan -Days 3 ## --> We can change at the later sta
 <details>
   <summary>Click to view the Images which was configured</summary>
 
+- General Tab
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/85c580a2-a607-430c-ad16-e41132e199bc" />
+
+
 
   
 </details>
