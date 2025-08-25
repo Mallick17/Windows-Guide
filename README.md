@@ -480,6 +480,10 @@ $RepetitionDuration = New-TimeSpan -Days 3 ## --> We can change at the later sta
 
 - Actions Tab
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/eefd33d6-cfa6-4cc7-92a6-a319f1f02073" />
+
+- Conditions Tab
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/8c5508b1-a1b5-428a-af89-8bb7fe0e118a" />
+
   
 </details>
 
