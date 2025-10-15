@@ -405,6 +405,9 @@ Register-ScheduledTask -TaskName "S3EveryMinuteSync" -Action $Action -Trigger $T
 $RepetitionDuration = New-TimeSpan -Days 3 ## --> We can change at the later stage anytime.
 ```
 
+- What it will do: Automate the S3 sync script to execute repeatedly every minute, mimicking a "cron" job on Windows. This is useful for near-real-time backups or monitoring, but be cautious—frequent runs could incur AWS costs or overload the system/network.
+- What it will not do: Handle task failures (e.g., no retries or alerts), validate the script path beforehand, or clean up on uninstall. It won't run if the user is logged off (due to Interactive logon type) or if the machine is off. The last line appears to be a snippet for later modification but isn't part of the task creation.
+
 ### **Step 4: Verify**
 
 * Check task info:
