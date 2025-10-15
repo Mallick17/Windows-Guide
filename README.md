@@ -405,6 +405,108 @@ Register-ScheduledTask -TaskName "S3EveryMinuteSync" -Action $Action -Trigger $T
 $RepetitionDuration = New-TimeSpan -Days 3 ## --> We can change at the later stage anytime.
 ```
 
+<details>
+    <summary>Click to view Explaination of PowerShell Commands</summary>
+
+### Overview
+These PowerShell commands use the `ScheduledTasks` module (available in Windows PowerShell 3.0+ and PowerShell Core) to create and register a scheduled task in Windows Task Scheduler. The task is named "S3EveryMinuteSync" and is designed to run the `s3sync.ps1` script (from your previous query) every minute, starting 1 minute from when the commands are executed. It runs under the current user's interactive session.
+
+Key assumptions:
+- You're running this in an elevated PowerShell session (as admin) to register tasks.
+- The script `C:\Users\Testing\scripts\s3sync.ps1` exists and is the one you described earlier (syncing to S3).
+- The task will run indefinitely (repeating forever) but can be modified later (e.g., to limit to 3 days as noted in the comment).
+
+After running these, you can view/manage the task in Task Scheduler GUI (search for "Task Scheduler" in Start menu) under the "Task Scheduler Library".
+
+### Step-by-Step Breakdown
+I'll explain each command line by line, including syntax, parameters, and behavior. Note the backticks (`` ` ``) in the trigger for line continuation—common in PowerShell for readability.
+
+#### 1. Define the Task Action
+```powershell
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File "C:\Users\Testing\scripts\s3sync.ps1""
+```
+- **What it does**:
+  - `New-ScheduledTaskAction`: Creates an action object that defines *what* the task runs.
+  - `-Execute "powershell.exe"`: Specifies the executable to launch (PowerShell host).
+  - `-Argument`: Passes command-line arguments to PowerShell:
+    - `-NoProfile`: Skips loading user profiles (faster startup, avoids customizations that might interfere).
+    - `-ExecutionPolicy Bypass`: Overrides execution policy restrictions (allows unsigned scripts like `s3sync.ps1` to run without warnings).
+    - `-File "C:\Users\Testing\scripts\s3sync.ps1"`: Tells PowerShell to execute this specific script file (full path required).
+  - Stores the result in `$Action` (a `CimInstance` object of type `MSFT_TaskExecAction`).
+- **Why?** Encapsulates how to invoke your S3 sync script reliably.
+- **What it won't do**: Validate if the script exists (fails at runtime if missing). No working directory set (defaults to system32; consider adding `-WorkingDirectory` if needed). The double quote at the end has an extra quote—likely a typo; it should be just one closing quote after the path.
+
+#### 2. Define the Task Trigger
+```powershell
+$Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(1) `
+    -RepetitionInterval (New-TimeSpan -Minutes 1) `
+    -RepetitionDuration ([TimeSpan]::MaxValue)
+```
+- **What it does**:
+  - `New-ScheduledTaskTrigger`: Creates a trigger object that defines *when* the task runs.
+  - `-Once`: Sets a one-time initial trigger (not daily/weekly).
+  - `-At (Get-Date).Date.AddMinutes(1)`: Calculates the start time:
+    - `(Get-Date).Date`: Gets today's date at midnight (e.g., 2025-10-15 00:00:00).
+    - `.AddMinutes(1)`: Adds 1 minute (e.g., starts at 00:01:00 today). If run mid-day, it floors to midnight +1 min, so adjust if you want "now +1 min" via `(Get-Date).AddMinutes(1)`.
+  - `-RepetitionInterval (New-TimeSpan -Minutes 1)`: Repeats the action every 1 minute after the initial start.
+  - `-RepetitionDuration ([TimeSpan]::MaxValue)`: Repeats indefinitely (`MaxValue` is ~10,000 years; effectively forever).
+  - Backticks allow multi-line for readability.
+  - Stores in `$Trigger` (a `CimInstance` of type `MSFT_TaskTimeTrigger`).
+- **Why?** Enables frequent, automated execution without manual intervention.
+- **What it won't do**: Account for time zones (uses local time). No randomization or conditions (e.g., only on idle). If the system time changes (e.g., DST), it might drift slightly.
+
+#### 3. Define the Task Principal (Security Context)
+```powershell
+$Principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
+```
+- **What it does**:
+  - `New-ScheduledTaskPrincipal`: Creates a principal object for *who* runs the task (security/permissions).
+  - `-UserId "$env:USERDOMAIN\$env:USERNAME"`: Uses the current user's domain-qualified name (e.g., "WORKGROUP\Testing"). `$env:USERDOMAIN` and `$env:USERNAME` are environment variables.
+  - `-LogonType Interactive`: Requires the user to be logged in interactively (task won't run in background/service mode; uses the user's session).
+  - Stores in `$Principal` (a `CimInstance` of type `MSFT_TaskPrincipal`).
+- **Why?** Ensures the task runs with the current user's permissions (e.g., access to AWS profiles, local files).
+- **What it won't do**: Prompt for password (assumes cached creds). If you need it to run when logged off, use `-LogonType S4U` or `ServiceAccount`. No group policy overrides.
+
+#### 4. Register the Scheduled Task
+```powershell
+Register-ScheduledTask -TaskName "S3EveryMinuteSync" -Action $Action -Trigger $Trigger -Principal $Principal -Description "Sync C:\Data\Reports to S3 every minute"
+```
+- **What it does**:
+  - `Register-ScheduledTask`: Creates and registers the task in the Task Scheduler store (root folder by default).
+  - `-TaskName "S3EveryMinuteSync"`: Unique name for the task (visible in Task Scheduler).
+  - `-Action $Action`: Attaches the previously defined action (run the PS script).
+  - `-Trigger $Trigger`: Attaches the trigger (start in 1 min, repeat every min forever).
+  - `-Principal $Principal`: Attaches the security context (run as current interactive user).
+  - `-Description`: Adds a human-readable note (shown in Task Scheduler UI).
+  - Returns a `CimInstance` of the registered task (e.g., for further queries).
+- **Why?** Combines all pieces into a live, scheduled task.
+- **What it won't do**: Overwrite an existing task with the same name (fails with error; use `-Force` to overwrite). No settings for power (e.g., wake on LAN) or conditions (e.g., only on AC power). The description mentions "C:\Data\Reports", but your script uses "C:\Users\Testing\scripts\Data\Reports"—minor mismatch, but doesn't affect functionality.
+
+#### 5. Snippet for Later Modification (Not Executed Here)
+```powershell
+$RepetitionDuration = New-TimeSpan -Days 3 ## --> We can change at the later stage anytime.
+```
+- **What it does**: This is *not* part of the task creation—it's a standalone variable assignment. `New-TimeSpan -Days 3` creates a timespan of 3 days (e.g., `3.00:00:00`).
+- **Why?** As per the comment, it's a placeholder to limit repetitions later. To apply it, you'd unregister the task (`Unregister-ScheduledTask -TaskName "S3EveryMinuteSync" -Confirm:$false`), recreate the trigger with `-RepetitionDuration $RepetitionDuration`, and re-register.
+- **What it won't do**: Anything on its own—it's just prep for editing. Note: The code has a typo (`New-ScheduledTaskTrigger -Days 3` in your message, but I assume it's `New-TimeSpan` based on context).
+
+### Overall Behavior
+- **Execution flow**: Run these commands → Task registers → Waits ~1 min → Runs `s3sync.ps1` → Repeats every 1 min forever (or until stopped).
+- **Monitoring**: Check status via `Get-ScheduledTask -TaskName "S3EveryMinuteSync" | Get-ScheduledTaskInfo` (shows last run time, result code). History in Task Scheduler UI under the task's "History" tab.
+- **Stopping/Editing**: `Disable-ScheduledTask -TaskName "S3EveryMinuteSync"` to pause; `Unregister-ScheduledTask` to delete. For 3-day limit: Modify trigger as noted, re-register.
+- **Exit codes**: Script runs exit 0 (success) or non-zero (e.g., AWS error); Task Scheduler logs these.
+
+### Limitations and Recommendations
+- **Performance**: Every-minute syncs could be resource-intensive (CPU/network for AWS calls). Start with longer intervals (e.g., 5-15 min) via `-RepetitionInterval (New-TimeSpan -Minutes 5)`.
+- **Reliability**: If script takes >1 min, overlaps occur (no built-in queuing). Use `-Settings` in `Register-ScheduledTask` for `RestartInterval` or `MultipleInstances Policy=Queue`.
+- **Security**: Interactive logon means it stops if user logs off. For always-on, switch to a service account.
+- **Testing**: Run `Start-ScheduledTask -TaskName "S3EveryMinuteSync"` manually first. Monitor S3 costs (frequent uploads).
+- **Improvements**: Add `-Force` to `Register-ScheduledTask` for idempotency. For production, wrap in a function or use XML exports for versioning.
+
+This setup turns your script into a robust, repeating job—great for continuous syncing! 
+  
+</details>
+
 - What it will do: Automate the S3 sync script to execute repeatedly every minute, mimicking a "cron" job on Windows. This is useful for near-real-time backups or monitoring, but be cautious—frequent runs could incur AWS costs or overload the system/network.
 - What it will not do: Handle task failures (e.g., no retries or alerts), validate the script path beforehand, or clean up on uninstall. It won't run if the user is logged off (due to Interactive logon type) or if the machine is off. The last line appears to be a snippet for later modification but isn't part of the task creation.
 
