@@ -378,6 +378,9 @@ $EndTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Add-Content $LogFile "==== Sync finished at $EndTime ===="
 Add-Content $LogFile ""
 ```
+- _What it will do:_ It will mirror the contents of a specific local folder to an S3 bucket (uploading new/changed files, skipping unchanged ones), while logging the entire process to a file for auditing. The sync is one-way (local to S3) and idempotent (safe to run multiple times).
+- _What it will not do:_ It won't delete files (from local or S3), handle authentication failures gracefully (e.g., no retry on expired MFA tokens), send notifications on errors, or perform any pre/post-validation (e.g., checking disk space or internet connectivity). It's a simple, fire-and-forget operation focused solely on sync and logging.
+
 
 ### **Step 3: Schedule the Task**
 Run this in PowerShell **as Administrator**:
